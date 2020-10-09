@@ -62,6 +62,7 @@ class Application
         next
       end
       name.downcase! if ldap_user_conf[:lowercase_name]
+      name.upcase! if ldap_user_conf[:uppercase_name]
 
       log.info "found user-dn: #{entry.dn}"
       user = LdapRole.new name, entry.dn
@@ -89,6 +90,7 @@ class Application
         next
       end
       name.downcase! if ldap_group_conf[:lowercase_name]
+      name.upcase! if ldap_group_conf[:uppercase_name]
 
       log.info "found group-dn: #{entry.dn}"
       group = LdapRole.new name, entry.dn, entry[ldap_group_conf[:member_attribute]]
