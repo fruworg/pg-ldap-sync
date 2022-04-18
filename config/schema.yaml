@@ -23,6 +23,9 @@ mapping:
       "uppercase_name":
         type: bool
         required:  no
+      "bothcase_name":
+        type: bool
+        required:  no
 
   "ldap_groups":
     type: map
@@ -41,6 +44,9 @@ mapping:
         type: bool
         required:  no
       "uppercase_name":
+        type: bool
+        required:  no
+      "bothcase_name":
         type: bool
         required:  no
       "member_attribute":

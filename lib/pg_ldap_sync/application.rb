@@ -15,11 +15,11 @@ class Application
 
   def string_to_symbol(hash)
     if hash.kind_of?(Hash)
-      return hash.inject({}){|h, v|
+      return hash.inject({}) do |h, v|
         raise "expected String instead of #{h.inspect}" unless v[0].kind_of?(String)
         h[v[0].intern] = string_to_symbol(v[1])
         h
-      }
+      end
     else
       return hash
     end
@@ -61,12 +61,22 @@ class Application
         log.warn "user attribute #{ldap_user_conf[:name_attribute].inspect} not defined for #{entry.dn}"
         next
       end
-      name.downcase! if ldap_user_conf[:lowercase_name]
-      name.upcase! if ldap_user_conf[:uppercase_name]
 
       log.info "found user-dn: #{entry.dn}"
-      user = LdapRole.new name, entry.dn
-      users << user
+
+      names = if ldap_user_conf[:bothcase_name]
+        [name, name.downcase].uniq
+      elsif ldap_user_conf[:lowercase_name]
+        [name.downcase]
+      elsif ldap_user_conf[:uppercase_name]
+        [name.upcase]
+      else
+        [name]
+      end
+
+      names.each do |n|
+        users << LdapRole.new(n, entry.dn)
+      end
       entry.each do |attribute, values|
         log.debug "   #{attribute}:"
         values.each do |value|
@@ -89,12 +99,22 @@ class Application
         log.warn "user attribute #{ldap_group_conf[:name_attribute].inspect} not defined for #{entry.dn}"
         next
       end
-      name.downcase! if ldap_group_conf[:lowercase_name]
-      name.upcase! if ldap_group_conf[:uppercase_name]
 
       log.info "found group-dn: #{entry.dn}"
-      group = LdapRole.new name, entry.dn, entry[ldap_group_conf[:member_attribute]]
-      groups << group
+
+      names = if ldap_group_conf[:bothcase_name]
+        [name, name.downcase].uniq
+      elsif ldap_group_conf[:lowercase_name]
+        [name.downcase]
+      elsif ldap_group_conf[:uppercase_name]
+         [name.upcase]
+      else
+        [name]
+      end
+
+      names.each do |n|
+        groups << LdapRole.new(n, entry.dn, entry[ldap_group_conf[:member_attribute]])
+      end
       entry.each do |attribute, values|
         log.debug "   #{attribute}:"
         values.each do |value|
@@ -108,8 +128,8 @@ class Application
 
   PgRole = Struct.new :name, :member_names
 
-  # List of default roles taken from https://www.postgresql.org/docs/current/static/default-roles.html
-  PG_BUILTIN_ROLES = %w[ pg_signal_backend pg_monitor pg_read_all_settings pg_read_all_stats pg_stat_scan_tables]
+  # List of default roles taken from https://www.postgresql.org/docs/current/predefined-roles.html
+  PG_BUILTIN_ROLES = %w[ pg_read_all_data pg_write_all_data pg_read_all_settings pg_read_all_stats pg_stat_scan_tables pg_monitor pg_database_owner pg_signal_backend pg_read_server_files pg_write_server_files pg_execute_server_program ]
 
   def search_pg_users
     pg_users_conf = @config[:pg_users]
@@ -185,12 +205,12 @@ class Application
       r.type = type
     end
 
-    log.info{
+    log.info do
       roles.each do |role|
         log.debug{ "#{role.state} #{role.type}: #{role.name}" }
       end
       "#{type} stat: create: #{roles.count{|r| r.state==:create }} drop: #{roles.count{|r| r.state==:drop }} keep: #{roles.count{|r| r.state==:keep }}"
-    }
+    end
     return roles
   end
 
@@ -236,42 +256,42 @@ class Application
   MatchedMembership = Struct.new :role_name, :has_member, :state
 
   def match_memberships(ldap_roles, pg_roles)
-    ldap_by_dn = ldap_roles.inject({}){|h,r| h[r.dn] = r; h }
-    ldap_by_m2m = ldap_roles.inject([]){|a,r|
+    hash_of_arrays = Hash.new { |h, k| h[k] = [] }
+    ldap_by_dn = ldap_roles.inject(hash_of_arrays){|h,r| h[r.dn] << r; h }
+    ldap_by_m2m = ldap_roles.inject([]) do |a,r|
       next a unless r.member_dns
-      a + r.member_dns.map{|dn|
-        if has_member=ldap_by_dn[dn]
+      a + r.member_dns.flat_map do |dn|
+        has_members = ldap_by_dn[dn]
+        log.warn{"ldap member with dn #{dn} is unknown"} if has_members.empty?
+        has_members.map do |has_member|
           [r.name, has_member.name]
-        else
-          log.warn{"ldap member with dn #{dn} is unknown"}
-          nil
         end
-      }.compact
-    }
+      end
+    end
 
-    pg_by_name = pg_roles.inject({}){|h,r| h[r.name] = r; h }
-    pg_by_m2m = pg_roles.inject([]){|a,r|
+    hash_of_arrays = Hash.new { |h, k| h[k] = [] }
+    pg_by_name = pg_roles.inject(hash_of_arrays){|h,r| h[r.name] << r; h }
+    pg_by_m2m = pg_roles.inject([]) do |a,r|
       next a unless r.member_names
-      a + r.member_names.map{|name|
-        if has_member=pg_by_name[name]
+      a + r.member_names.flat_map do |name|
+        has_members = pg_by_name[name]
+        log.warn{"pg member with name #{name} is unknown"} if has_members.empty?
+        has_members.map do |has_member|
           [r.name, has_member.name]
-        else
-          log.warn{"pg member with name #{name} is unknown"}
-          nil
         end
-      }.compact
-    }
+      end
+    end
 
     memberships  = (ldap_by_m2m & pg_by_m2m).map{|r,mo| MatchedMembership.new r, mo, :keep }
     memberships += (ldap_by_m2m - pg_by_m2m).map{|r,mo| MatchedMembership.new r, mo, :grant }
     memberships += (pg_by_m2m - ldap_by_m2m).map{|r,mo| MatchedMembership.new r, mo, :revoke }
 
-    log.info{
+    log.info do
       memberships.each do |membership|
         log.debug{ "#{membership.state} #{membership.role_name} to #{membership.has_member}" }
       end
       "membership stat: grant: #{memberships.count{|u| u.state==:grant }} revoke: #{memberships.count{|u| u.state==:revoke }} keep: #{memberships.count{|u| u.state==:keep }}"
-    }
+    end
     return memberships
   end
 
