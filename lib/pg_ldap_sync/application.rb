@@ -61,7 +61,6 @@ class Application
         log.warn "user attribute #{ldap_user_conf[:name_attribute].inspect} not defined for #{entry.dn}"
         next
       end
-
       log.info "found user-dn: #{entry.dn}"
 
       names = if ldap_user_conf[:bothcase_name]
@@ -99,7 +98,6 @@ class Application
         log.warn "user attribute #{ldap_group_conf[:name_attribute].inspect} not defined for #{entry.dn}"
         next
       end
-
       log.info "found group-dn: #{entry.dn}"
 
       names = if ldap_group_conf[:bothcase_name]
@@ -256,8 +254,13 @@ class Application
   MatchedMembership = Struct.new :role_name, :has_member, :state
 
   def match_memberships(ldap_roles, pg_roles)
+    ldap_group_conf = @config[:ldap_groups]
     hash_of_arrays = Hash.new { |h, k| h[k] = [] }
-    ldap_by_dn = ldap_roles.inject(hash_of_arrays){|h,r| h[r.dn] << r; h }
+    if ldap_group_conf[:ald_domain]
+      ldap_by_dn = ldap_roles.inject(hash_of_arrays){|h,r| h[r.name] << r; h }
+    else
+      ldap_by_dn = ldap_roles.inject(hash_of_arrays){|h,r| h[r.dn] << r; h }
+    end
     ldap_by_m2m = ldap_roles.inject([]) do |a,r|
       next a unless r.member_dns
       a + r.member_dns.flat_map do |dn|

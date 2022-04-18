@@ -25,6 +25,8 @@ ldap_users:
   name_attribute: sAMAccountName
   # lowercase name for use as PG role name
   lowercase_name: true
+  # uppercase name for use as PG role name
+  uppercase_name: false
   # Add lowercase name *and* original name for use as PG role names (useful for migrating between case types)
   bothcase_name: false
 
@@ -36,8 +38,13 @@ ldap_groups:
   name_attribute: cn
   # lowercase name for use as PG role name
   lowercase_name: false
+  # uppercase name for use as PG role name
+  uppercase_name: false
   # this attribute must reference to all member DN's of the given group
-  member_attribute: member
+  member_attribute: "memberuid"
+  # True if use Astra Linux Domain
+  ald_domain: true
+  
 
 # Connection parameters to PostgreSQL server
 # see also: http://rubydoc.info/gems/pg/PG/Connection#initialize-instance_method
