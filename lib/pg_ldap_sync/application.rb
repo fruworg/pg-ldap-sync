@@ -52,13 +52,18 @@ class Application
 
   def search_ldap_users
     ldap_user_conf = @config[:ldap_users]
+    name_attribute = ldap_user_conf[:name_attribute]
 
     users = []
-    res = @ldap.search(:base => ldap_user_conf[:base], :filter => ldap_user_conf[:filter]) do |entry|
-      name = entry[ldap_user_conf[:name_attribute]].first
+    res = @ldap.search(
+          base: ldap_user_conf[:base],
+          filter: ldap_user_conf[:filter],
+          attributes: [name_attribute, :dn]
+    ) do |entry|
+      name = entry[name_attribute].first
 
       unless name
-        log.warn "user attribute #{ldap_user_conf[:name_attribute].inspect} not defined for #{entry.dn}"
+        log.warn "user attribute #{name_attribute.inspect} not defined for #{entry.dn}"
         next
       end
       log.info "found user-dn: #{entry.dn}"
@@ -87,17 +92,56 @@ class Application
     return users
   end
 
+  def retrieve_array_attribute(entry, attribute_name)
+    array = entry[attribute_name]
+    if array.empty?
+      # Possibly an attribute, which must be retrieved in several ranges
+
+      ranged_attr = entry.attribute_names.find { |n| n =~ /\A#{Regexp.escape(attribute_name)};range=/ }
+      if ranged_attr
+        entry_dn = entry.dn
+
+        loop do
+          array += entry[ranged_attr]
+          log.debug "retrieved attribute range #{ranged_attr.inspect} of dn #{entry_dn}"
+
+          if ranged_attr =~ /;range=\d\-\*\z/
+            break
+          end
+
+          attribute_with_range = ranged_attr.to_s.gsub(/;range=.*/, ";range=#{array.size}-*")
+          entry = @ldap.search(
+            base: entry_dn,
+            scope: Net::LDAP::SearchScope_BaseObject,
+            attributes: attribute_with_range).first
+
+          ranged_attr = entry.attribute_names.find { |n| n =~ /\A#{Regexp.escape(attribute_name)};range=/ }
+        end
+      end
+    else
+      # Values already received -> No ranged attribute
+    end
+    return array
+  end
+
   def search_ldap_groups
     ldap_group_conf = @config[:ldap_groups]
+    name_attribute = ldap_group_conf[:name_attribute]
+    member_attribute = ldap_group_conf[:member_attribute]
 
     groups = []
-    res = @ldap.search(:base => ldap_group_conf[:base], :filter => ldap_group_conf[:filter]) do |entry|
-      name = entry[ldap_group_conf[:name_attribute]].first
+    res = @ldap.search(
+          base: ldap_group_conf[:base],
+          filter: ldap_group_conf[:filter],
+          attributes: [name_attribute, member_attribute, :dn]
+    ) do |entry|
+      name = entry[name_attribute].first
 
       unless name
-        log.warn "user attribute #{ldap_group_conf[:name_attribute].inspect} not defined for #{entry.dn}"
+        log.warn "user attribute #{name_attribute.inspect} not defined for #{entry.dn}"
         next
       end
+
       log.info "found group-dn: #{entry.dn}"
 
       names = if ldap_group_conf[:bothcase_name]
@@ -111,7 +155,8 @@ class Application
       end
 
       names.each do |n|
-        groups << LdapRole.new(n, entry.dn, entry[ldap_group_conf[:member_attribute]])
+        group_members = retrieve_array_attribute(entry, member_attribute)
+        groups << LdapRole.new(n, entry.dn, group_members)
       end
       entry.each do |attribute, values|
         log.debug "   #{attribute}:"
@@ -127,7 +172,7 @@ class Application
   PgRole = Struct.new :name, :member_names
 
   # List of default roles taken from https://www.postgresql.org/docs/current/predefined-roles.html
-  PG_BUILTIN_ROLES = %w[ pg_read_all_data pg_write_all_data pg_read_all_settings pg_read_all_stats pg_stat_scan_tables pg_monitor pg_database_owner pg_signal_backend pg_read_server_files pg_write_server_files pg_execute_server_program ]
+  PG_BUILTIN_ROLES = %w[ pg_read_all_data pg_write_all_data pg_read_all_settings pg_read_all_stats pg_stat_scan_tables pg_monitor pg_database_owner pg_signal_backend pg_read_server_files pg_write_server_files pg_execute_server_program pg_checkpoint]
 
   def search_pg_users
     pg_users_conf = @config[:pg_users]
@@ -325,8 +370,26 @@ class Application
   def start!
     read_config_file(@config_fname)
 
+    ldap_conf = @config[:ldap_connection]
+    auth_meth = ldap_conf.dig(:auth, :method).to_s
+    if auth_meth == "gssapi"
+      begin
+        require 'net/ldap/auth_adapter/gssapi'
+      rescue LoadError => err
+        raise "#{err}\nTo use GSSAPI authentication please run:\n  gem install net-ldap-auth_adapter-gssapi"
+      end
+    elsif auth_meth == "gss_spnego"
+      begin
+        require 'net-ldap-gss-spnego'
+        # This doesn't work since this file is defined in net-ldap as a placeholder:
+        #   require 'net/ldap/auth_adapter/gss_spnego'
+      rescue LoadError => err
+        raise "#{err}\nTo use GSSAPI authentication please run:\n  gem install net-ldap-gss-spnego"
+      end
+    end
+
     # gather LDAP users and groups
-    @ldap = Net::LDAP.new @config[:ldap_connection]
+    @ldap = Net::LDAP.new ldap_conf
     ldap_users = uniq_names search_ldap_users
     ldap_groups = uniq_names search_ldap_groups
 
@@ -357,14 +420,14 @@ class Application
 
     # Determine exitcode
     if log.had_errors?
-      raise ErrorExit, 1
+      raise ErrorExit.new(1, log.first_error)
     end
   end
 
   def self.run(argv)
     s = self.new
     s.config_fname = '/etc/pg_ldap_sync.yaml'
-    s.log = Logger.new($stdout, @error_counters)
+    s.log = Logger.new($stdout)
     s.log.level = Logger::ERROR
 
     OptionParser.new do |opts|
