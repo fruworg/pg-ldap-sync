@@ -51,8 +51,8 @@ Install pg-ldap-sync and required dependencies:
 ```sh
   git clone https://github.com/fruworg/pg-ldap-sync.git
   cd pg-ldap-sync
-  gem install bundler:1.16.0
-  bundle _1.16.0_ install
+  gem install bundler:1.15.3
+  bundle _1.15.3_ install
   bundle exec rake install
 ```
 
