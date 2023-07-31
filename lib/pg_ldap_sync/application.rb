@@ -475,6 +475,7 @@ class Application
   def self.run(argv)
     s = self.new
     s.config_fname = '/etc/pg_ldap_sync.yaml'
+    s.groups_fname = ''
     s.log = Logger.new($stdout)
     s.log.level = Logger::ERROR
 
