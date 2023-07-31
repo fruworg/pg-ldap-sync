@@ -10,6 +10,7 @@ require "pg_ldap_sync/logger"
 module PgLdapSync
 class Application
   attr_accessor :config_fname
+  attr_accessor :groups_fname
   attr_accessor :log
   attr_accessor :test
 
