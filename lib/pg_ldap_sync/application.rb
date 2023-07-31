@@ -50,16 +50,53 @@ class Application
 
   LdapRole = Struct.new :name, :dn, :member_dns
 
+  def read_groups_from_file(fname)
+    groups = []
+    File.foreach(fname) do |line|
+      # Удалите пробелы и символы новой строки с помощью strip
+      group = line.strip
+      groups << group unless group.empty?
+    end
+    groups
+  end
+
+  def format_groups_for_ldap_users(groups, filter)
+    # Используйте метод map для преобразования каждой группы в соответствующий формат
+    formatted_groups = groups.map { |group| "(memberOf=CN=#{group},#{filter})" }
+    # Используйте метод join для объединения форматированных групп в одну строку с оператором "или" (|)
+    "(&(objectClass=organizationalPerson)(|" + formatted_groups.join + "))"
+  end
+
+  def format_groups_for_ldap_groups(groups)
+    # Используйте метод map для преобразования каждой группы в соответствующий формат
+    formatted_groups = groups.map { |group| "(cn=#{group})" }
+    # Используйте метод join для объединения форматированных групп в одну строку с оператором "или" (|)
+    "(|" + formatted_groups.join + ")"
+  end
+
   def search_ldap_users
     ldap_user_conf = @config[:ldap_users]
     name_attribute = ldap_user_conf[:name_attribute]
 
     users = []
-    res = @ldap.search(
-          base: ldap_user_conf[:base],
-          filter: ldap_user_conf[:filter],
-          attributes: [name_attribute, :dn]
-    ) do |entry|
+    
+    if defined?(@groups_fname)
+      @groups = read_groups_from_file(@groups_fname)
+
+      res = @ldap.search(
+            base: ldap_user_conf[:base],
+            filter: format_groups_for_ldap_users(@groups, ldap_user_conf[:filter]),
+            attributes: [name_attribute, :dn]
+      )
+    else
+      res = @ldap.search(
+            base: ldap_user_conf[:base],
+            filter: ldap_user_conf[:filter],
+            attributes: [name_attribute, :dn]
+      ) 
+    end
+    
+      do |entry|
       name = entry[name_attribute].first
 
       unless name
@@ -130,11 +167,22 @@ class Application
     member_attribute = ldap_group_conf[:member_attribute]
 
     groups = []
-    res = @ldap.search(
-          base: ldap_group_conf[:base],
-          filter: ldap_group_conf[:filter],
-          attributes: [name_attribute, member_attribute, :dn]
-    ) do |entry|
+
+    if defined?(@groups_fname)
+      res = @ldap.search(
+            base: ldap_group_conf[:base],
+            filter: format_groups_for_ldap_users(@groups, ldap_user_conf[:filter]),
+            attributes: [name_attribute, member_attribute, :dn]
+      ) 
+    else
+      res = @ldap.search(
+            base: ldap_group_conf[:base],
+            filter: ldap_group_conf[:filter],
+            attributes: [name_attribute, member_attribute, :dn]
+      ) 
+    end
+
+      do |entry|
       name = entry[name_attribute].first
 
       unless name
@@ -435,6 +483,7 @@ class Application
       opts.banner = "Usage: #{$0} [options]"
       opts.on("-v", "--[no-]verbose", "Increase verbose level"){|v| s.log.level += v ? -1 : 1 }
       opts.on("-c", "--config FILE", "Config file [#{s.config_fname}]", &s.method(:config_fname=))
+      opts.on("-g", "--groups FILE", "Groups file [#{s.groups_fname}]", &s.method(:groups_fname=))
       opts.on("-t", "--[no-]test", "Don't do any change in the database", &s.method(:test=))
 
       opts.parse!(argv)
