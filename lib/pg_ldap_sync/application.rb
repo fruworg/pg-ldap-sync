@@ -172,7 +172,7 @@ class Application
     if @groups_fname != ''
       res = @ldap.search(
             base: ldap_group_conf[:base],
-            filter: format_groups_for_ldap_groups(@groups, ldap_group_conf[:filter]),
+            filter: format_groups_for_ldap_groups(@groups),
             attributes: [name_attribute, member_attribute, :dn]
       )
     else
