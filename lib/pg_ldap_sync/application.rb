@@ -87,15 +87,16 @@ class Application
             base: ldap_user_conf[:base],
             filter: format_groups_for_ldap_users(@groups, ldap_user_conf[:filter]),
             attributes: [name_attribute, :dn]
-      ) do |entry|
+      )
     else
       res = @ldap.search(
             base: ldap_user_conf[:base],
             filter: ldap_user_conf[:filter],
             attributes: [name_attribute, :dn]
-      ) do |entry|
+      )
     end
     
+    res.each do |entry|
       name = entry[name_attribute].first
 
       unless name
@@ -172,15 +173,16 @@ class Application
             base: ldap_group_conf[:base],
             filter: format_groups_for_ldap_users(@groups, ldap_user_conf[:filter]),
             attributes: [name_attribute, member_attribute, :dn]
-      ) do |entry|
+      )
     else
       res = @ldap.search(
             base: ldap_group_conf[:base],
             filter: ldap_group_conf[:filter],
             attributes: [name_attribute, member_attribute, :dn]
-      ) do |entry|
+      )
     end
 
+    res.each do |entry|
       name = entry[name_attribute].first
 
       unless name
