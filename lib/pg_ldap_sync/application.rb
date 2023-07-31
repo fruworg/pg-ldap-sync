@@ -81,7 +81,7 @@ class Application
 
     users = []
     
-    if defined?(@groups_fname)
+    if @groups_fname != ''
       @groups = read_groups_from_file(@groups_fname)
 
       res = @ldap.search(
@@ -169,7 +169,7 @@ class Application
 
     groups = []
 
-    if defined?(@groups_fname)
+    if @groups_fname != ''
       res = @ldap.search(
             base: ldap_group_conf[:base],
             filter: format_groups_for_ldap_users(@groups, ldap_user_conf[:filter]),
