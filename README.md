@@ -16,7 +16,7 @@ PostgreSQL предлагает различные методы аутентиф
 
 Она предназначена для запуска в качестве cron-задания.
 
-## FEATURES:
+## ВОЗМОЖНОСТИ:
 
 * Создание, удаление пользователей и групп, а также изменения в членстве синхронизируются из LDAP в PostgreSQL.
 * Поддерживаются вложенные группы/роли
@@ -40,13 +40,8 @@ PostgreSQL предлагает различные методы аутентиф
 * под Windows: http://rubyinstaller.org
 * на Debian/Ubuntu: `apt-get install ruby libpq-dev`.
 
-Установите pg-ldap-sync и необходимые зависимости:
-``sh
-  gem install pg-ldap-sync
-```
-
 ### Установка из Git:
-``sh
+```sh
   git clone https://github.com/fruworg/pg-ldap-sync.git
   cd pg-ldap-sync
   gem install bundler
@@ -83,11 +78,11 @@ PostgreSQL предлагает различные методы аутентиф
   PATH=$PATH:/usr/lib/postgresql/10/bin/ bundle exec rake test
 ```
 
-## ISSUES:
+## ПРОБЛЕМЫ:
 
 * В настоящее время нет возможности установить определенные атрибуты пользователя в PG на основе индивидуальных атрибутов в LDAP (срок действия и т.д.).
 
 
-## Лицензия
+## ЛИЦЕНЗИЯ
 
 Гем доступен с открытым исходным кодом на условиях [MIT License](https://opensource.org/licenses/MIT).
