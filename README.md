@@ -57,11 +57,11 @@ PostgreSQL предлагает различные методы аутентиф
 [config/sample-config2.yaml](https://github.com/fruworg/pg-ldap-sync/blob/master/config/sample-config2.yaml).
 
 Запустить в тестовом режиме:
-``sh
+```sh
   pg_ldap_sync -c my_config.yaml -vv -t
 ```
 Запуск в режиме модификации:
-``sh
+```sh
   pg_ldap_sync -c my_config.yaml -vv
 ```
 
@@ -72,7 +72,7 @@ PostgreSQL предлагает различные методы аутентиф
 
 ## ТЕСТ:
 В каталоге `test` находится небольшой тестовый набор, который работает с внутренним LDAP-сервером и сервером PostgreSQL. Убедитесь, что команды `pg_ctl`, `initdb` и `psql` находятся в `PATH` следующим образом:
-``sh
+```sh
   cd pg-ldap-sync
   установить пакет
   PATH=$PATH:/usr/lib/postgresql/10/bin/ bundle exec rake test
