@@ -1,95 +1,93 @@
-[![Build Status](https://app.travis-ci.com/larskanis/pg-ldap-sync.svg?branch=master)](https://app.travis-ci.com/larskanis/pg-ldap-sync) [![Build status](https://ci.appveyor.com/api/projects/status/09xn9q5p64jbxtka/branch/master?svg=true)](https://ci.appveyor.com/project/larskanis/pg-ldap-sync/branch/master)
-
-# Use LDAP permissions in PostgreSQL
+# Использование разрешений LDAP в PostgreSQL
 
 * http://github.com/larskanis/pg-ldap-sync
 
-## DESCRIPTION:
+## ОПИСАНИЕ:
 
-LDAP is often used for a centralized user and role management in an enterprise environment.
-PostgreSQL offers different authentication methods, like LDAP, SSPI, GSSAPI or SSL.
-However, for any method the user must already exist in the database, before the authentication can be used.
-There is currently no direct authorization of database users on LDAP.
-So roles and memberships has to be administered twice.
+LDAP часто используется для централизованного управления пользователями и ролями в корпоративной среде.
+PostgreSQL предлагает различные методы аутентификации, такие как LDAP, SSPI, GSSAPI или SSL.
+Однако при любом методе пользователь должен уже существовать в базе данных, прежде чем аутентификация может быть использована.
+В настоящее время не существует прямой авторизации пользователей базы данных по LDAP.
+Поэтому роли и членство приходится администрировать дважды.
 
-This program helps to solve the issue by synchronizing users, groups and their memberships from LDAP to PostgreSQL.
-Access to LDAP is used read-only.
-`pg_ldap_sync` issues proper CREATE ROLE, DROP ROLE, GRANT and REVOKE commands to synchronize users and groups.
+Данная программа позволяет решить эту проблему путем синхронизации пользователей, групп и их членства из LDAP в PostgreSQL.
+Доступ к LDAP используется только для чтения.
+Для синхронизации пользователей и групп `pg_ldap_sync` выдает соответствующие команды CREATE ROLE, DROP ROLE, GRANT и REVOKE.
 
-It is meant to be started as a cron job.
+Она предназначена для запуска в качестве cron-задания.
 
 ## FEATURES:
 
-* User+group creation, deletion and changes in memberships are synchronized from LDAP to PostgreSQL
-* Nested groups/roles supported
-* Configurable per YAML config file
-* Can use Active Directory as LDAP-Server
-* Set scope of considered users/groups on LDAP and PG side
-* Test mode which doesn't do any changes to the DBMS
-* Both LDAP and PG connections can be secured by SSL/TLS
-* NTLM and Kerberos authentication to LDAP server
+* Создание, удаление пользователей и групп, а также изменения в членстве синхронизируются из LDAP в PostgreSQL.
+* Поддерживаются вложенные группы/роли
+* Настраивается в конфигурационном файле YAML
+* Возможность использования Active Directory в качестве LDAP-сервера
+* Установка области видимости рассматриваемых пользователей/групп на стороне LDAP и PG
+* Тестовый режим, не вносящий никаких изменений в СУБД
+* Соединения между LDAP и PG могут быть защищены с помощью SSL/TLS
+* NTLM и Kerberos аутентификация на LDAP-сервере
 
-## REQUIREMENTS:
+## ТРЕБОВАНИЯ:
 
 * Ruby-2.0+
-* LDAP-v3 server
-* PostgreSQL-server v9.0+
+* LDAP-v3-сервер
+* PostgreSQL-сервер v9.0+
 
-## INSTALL:
+## УСТАНОВКА:
 
-Install Ruby:
+Установить Ruby:
 
-* on Windows: http://rubyinstaller.org
-* on Debian/Ubuntu: `apt-get install ruby libpq-dev`
+* под Windows: http://rubyinstaller.org
+* на Debian/Ubuntu: `apt-get install ruby libpq-dev`.
 
-Install pg-ldap-sync and required dependencies:
-```sh
+Установите pg-ldap-sync и необходимые зависимости:
+``sh
   gem install pg-ldap-sync
 ```
 
-### Install from Git:
-```sh
+### Установка из Git:
+``sh
   git clone https://github.com/fruworg/pg-ldap-sync.git
   cd pg-ldap-sync
-  gem install bundler:1.15.3
-  bundle _1.15.3_ install
+  gem install bundler
+  bundle install
   bundle exec rake install
 ```
 
-## USAGE:
+## ИСПОЛЬЗОВАНИЕ:
 
-Create a config file based on
-[config/sample-config.yaml](https://github.com/larskanis/pg-ldap-sync/blob/master/config/sample-config.yaml)
-or even better
-[config/sample-config2.yaml](https://github.com/larskanis/pg-ldap-sync/blob/master/config/sample-config2.yaml)
+Создать файл конфигурации на основе
+[config/sample-config.yaml](https://github.com/fruworg/pg-ldap-sync/blob/master/config/sample-config.yaml)
+или еще лучше
+[config/sample-config2.yaml](https://github.com/fruworg/pg-ldap-sync/blob/master/config/sample-config2.yaml).
 
-Run in test-mode:
-```sh
+Запустить в тестовом режиме:
+``sh
   pg_ldap_sync -c my_config.yaml -vv -t
 ```
-Run in modify-mode:
-```sh
+Запуск в режиме модификации:
+``sh
   pg_ldap_sync -c my_config.yaml -vv
 ```
 
-It is recommended to avoid granting permissions to synchronized users on the PostgreSQL server, but to grant permissions to groups instead.
-This is because `DROP USER` statements invoked when a user leaves otherwise fail due to depending objects.
-`DROP GROUP` equally fails if there are depending objects, but groups are typically more stable and removed rarely.
+Рекомендуется не предоставлять права синхронизируемым пользователям на сервере PostgreSQL, а предоставлять права группам.
+Это связано с тем, что операторы `DROP USER`, вызываемые при уходе пользователя, в противном случае терпят неудачу из-за наличия зависимых объектов.
+Оператор `DROP GROUP` также не работает при наличии зависимых объектов, но группы, как правило, более стабильны и удаляются редко.
 
 
-## TEST:
-There is a small test suite in the `test` directory that runs against an internal LDAP server and a PostgreSQL server. Ensure `pg_ctl`, `initdb` and `psql` commands are in the `PATH` like so:
-```sh
+## ТЕСТ:
+В каталоге `test` находится небольшой тестовый набор, который работает с внутренним LDAP-сервером и сервером PostgreSQL. Убедитесь, что команды `pg_ctl`, `initdb` и `psql` находятся в `PATH` следующим образом:
+``sh
   cd pg-ldap-sync
-  bundle install
+  установить пакет
   PATH=$PATH:/usr/lib/postgresql/10/bin/ bundle exec rake test
 ```
 
 ## ISSUES:
 
-* There is currently no way to set certain user attributes in PG based on individual attributes in LDAP (expiration date etc.)
+* В настоящее время нет возможности установить определенные атрибуты пользователя в PG на основе индивидуальных атрибутов в LDAP (срок действия и т.д.).
 
 
-## License
+## Лицензия
 
-The gem is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).
+Гем доступен с открытым исходным кодом на условиях [MIT License](https://opensource.org/licenses/MIT).
