@@ -1,0 +1,35 @@
+ldap_connection:
+  host: <dc>
+  port: 636
+  auth:
+    method: :gssapi
+    hostname: <dc.doma.in>
+  encryption:
+    method: :simple_tls
+
+ldap_users:
+  base: DC=<doma>,DC=<in>
+  filter: CN=Users,DC=<doma>,DC=<in>
+  name_attribute: sAMAccountName
+  uppercase_name: true
+
+ldap_groups:
+  base: DC=<doma>,DC=<in>
+  filter: fruw.org
+  name_attribute: cn
+  uppercase_name: true
+  member_attribute: "memberuid"
+  
+pg_connection:
+  host: <db.doma.in>
+  dbname: postgres
+  user: <db-username>
+
+pg_users:
+  filter: oid IN (SELECT pam.member FROM pg_auth_members pam JOIN pg_roles pr ON pr.oid=pam.roleid WHERE pr.rolname='ldap_users')
+  create_options: LOGIN IN ROLE ldap_users
+
+pg_groups:
+  filter: oid IN (SELECT pam.member FROM pg_auth_members pam JOIN pg_roles pr ON pr.oid=pam.roleid WHERE pr.rolname='ldap_groups')
+  create_options: NOLOGIN IN ROLE ldap_groups
+  grant_options:
