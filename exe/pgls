@@ -2,7 +2,7 @@
 
 require 'rubygems'
 require 'bundler/setup'
-require 'pg_ldap_sync'
+require 'pgls'
 
 begin
   PgLdapSync::Application.run(ARGV)
