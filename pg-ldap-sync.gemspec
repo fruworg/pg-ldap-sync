@@ -3,13 +3,13 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 require "pg_ldap_sync/version"
 
 Gem::Specification.new do |spec|
-  spec.name          = "pg-ldap-sync"
+  spec.name          = "pgls"
   spec.version       = PgLdapSync::VERSION
   spec.authors       = ["Lars Kanis"]
   spec.email         = ["lars@greiz-reinsdorf.de"]
 
   spec.summary       = %q{Use LDAP permissions in PostgreSQL}
-  spec.homepage      = "https://github.com/fruworg/pg-ldap-sync"
+  spec.homepage      = "https://github.com/fruworg/pgls
   spec.license       = "MIT"
 
   spec.files         = `git ls-files -z`.split("\x0").reject do |f|
