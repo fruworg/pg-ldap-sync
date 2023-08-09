@@ -1,6 +1,6 @@
 # Использование разрешений LDAP в PostgreSQL
 
-* http://github.com/larskanis/pg-ldap-sync
+* http://github.com/fruworg/pgls
 
 ## ОПИСАНИЕ:
 
@@ -12,7 +12,7 @@ PostgreSQL предлагает различные методы аутентиф
 
 Данная программа позволяет решить эту проблему путем синхронизации пользователей, групп и их членства из LDAP в PostgreSQL.
 Доступ к LDAP используется только для чтения.
-Для синхронизации пользователей и групп `pg_ldap_sync` выдает соответствующие команды CREATE ROLE, DROP ROLE, GRANT и REVOKE.
+Для синхронизации пользователей и групп `pgls` выдает соответствующие команды CREATE ROLE, DROP ROLE, GRANT и REVOKE.
 
 Она предназначена для запуска в качестве cron-задания.
 
@@ -42,8 +42,8 @@ PostgreSQL предлагает различные методы аутентиф
 
 ### Установка из Git:
 ```sh
-  git clone https://github.com/fruworg/pg-ldap-sync.git
-  cd pg-ldap-sync
+  git clone https://github.com/fruworg/pgls.git
+  cd pgls
   gem install bundler
   bundle install
   bundle exec rake install
@@ -52,17 +52,17 @@ PostgreSQL предлагает различные методы аутентиф
 ## ИСПОЛЬЗОВАНИЕ:
 
 Создать файл конфигурации на основе
-[config/sample-config.yaml](https://github.com/fruworg/pg-ldap-sync/blob/master/config/sample-config.yaml)
+[config/sample-config.yaml](https://github.com/fruworg/pgls/blob/master/config/sample-config.yaml)
 или еще лучше
-[config/sample-config2.yaml](https://github.com/fruworg/pg-ldap-sync/blob/master/config/sample-config2.yaml).
+[config/sample-config2.yaml](https://github.com/fruworg/pgls/blob/master/config/sample-config2.yaml).
 
 Запустить в тестовом режиме:
 ```sh
-  pg_ldap_sync -c my_config.yaml -vv -t
+  pgls -c my_config.yaml -vv -t
 ```
 Запуск в режиме модификации:
 ```sh
-  pg_ldap_sync -c my_config.yaml -vv
+  pgls -c my_config.yaml -vv
 ```
 
 Рекомендуется не предоставлять права синхронизируемым пользователям на сервере PostgreSQL, а предоставлять права группам.
@@ -73,7 +73,7 @@ PostgreSQL предлагает различные методы аутентиф
 ## ТЕСТ:
 В каталоге `test` находится небольшой тестовый набор, который работает с внутренним LDAP-сервером и сервером PostgreSQL. Убедитесь, что команды `pg_ctl`, `initdb` и `psql` находятся в `PATH` следующим образом:
 ```sh
-  cd pg-ldap-sync
+  cd pgls
   установить пакет
   PATH=$PATH:/usr/lib/postgresql/10/bin/ bundle exec rake test
 ```
