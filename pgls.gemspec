@@ -9,7 +9,7 @@ Gem::Specification.new do |spec|
   spec.email         = ["lars@greiz-reinsdorf.de"]
 
   spec.summary       = %q{Use LDAP permissions in PostgreSQL}
-  spec.homepage      = "https://github.com/fruworg/pgls
+  spec.homepage      = "https://github.com/fruworg/pgls"
   spec.license       = "MIT"
 
   spec.files         = `git ls-files -z`.split("\x0").reject do |f|
