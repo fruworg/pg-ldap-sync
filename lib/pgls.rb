@@ -1,6 +1,6 @@
-require "pg_ldap_sync/application"
-require "pg_ldap_sync/compat"
-require "pg_ldap_sync/version"
+require "pgls/application"
+require "pgls/compat"
+require "pgls/version"
 
 module PgLdapSync
   class LdapError < RuntimeError
