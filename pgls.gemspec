@@ -5,8 +5,8 @@ require "pgls/version"
 Gem::Specification.new do |spec|
   spec.name          = "pgls"
   spec.version       = PgLdapSync::VERSION
-  spec.authors       = ["Lars Kanis"]
-  spec.email         = ["lars@greiz-reinsdorf.de"]
+  spec.authors       = ["fruworg"]
+  spec.email         = ["im@fruw.org"]
 
   spec.summary       = %q{Use LDAP permissions in PostgreSQL}
   spec.homepage      = "https://github.com/fruworg/pgls"
@@ -23,9 +23,9 @@ Gem::Specification.new do |spec|
 
   spec.add_runtime_dependency "net-ldap", "~> 0.16"
   spec.add_runtime_dependency "kwalify", "~> 0.7"
-  spec.add_runtime_dependency "pg", ">= 0.14", "<= 1.0.0"
+  spec.add_runtime_dependency "pg", ">= 0.14", "< 2.0"
   spec.add_runtime_dependency "net-ldap-auth_adapter-gssapi", "~> 0.2.0"
-  spec.add_development_dependency "ruby-ldapserver", "~> 0.7"
+  spec.add_development_dependency "ruby-ldapserver", "~> 0.3"
   spec.add_development_dependency "minitest", "~> 5.0"
   spec.add_development_dependency "bundler", ">= 1.16", "< 3.0"
   spec.add_development_dependency "rake", "~> 13.0"
