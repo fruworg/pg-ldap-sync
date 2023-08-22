@@ -54,15 +54,6 @@ bundle install
 bundle exec rake install
 ```
 
-### Установка из Git:
-```sh
-  git clone https://github.com/fruworg/pgls.git
-  cd pgls
-  gem install bundler
-  bundle install
-  bundle exec rake install
-```
-
 ## Использование:
 
 Создать файл конфигурации на основе
